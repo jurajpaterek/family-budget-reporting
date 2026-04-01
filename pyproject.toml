@@ -1,0 +1,18 @@
+[project]
+name = "family-budget-reporting"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.88.0",
+    "ipykernel>=7.2.0",
+    "marimo>=0.22.0",
+    "pandas>=3.0.2",
+    "plotly>=6.6.0",
+    "polars>=1.39.3",
+    "pydantic-ai-slim>=1.75.0",
+    "python-dotenv>=1.2.2",
+    "python-lsp-server>=1.14.0",
+    "requests>=2.33.1",
+]
