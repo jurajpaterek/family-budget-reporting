@@ -4,13 +4,13 @@ import logging
 
 # validate and load secrets from .env file
 load_dotenv()
-required = ["WALLET_API_TOKEN", "WALLET_BASE_URL", "GMAIL_USERNAME", "GMAIL_APP_PASSWORD"]
+required = ["WALLET_API_TOKEN", "GMAIL_USERNAME", "GMAIL_APP_PASSWORD"]
 missing = [key for key in required if not os.getenv(key)]
 if missing:
     raise EnvironmentError(f"Missing required environment variables: {missing}")
 
+API_URL = "https://rest.budgetbakers.com/wallet/v1/api/"
 API_TOKEN = os.getenv("WALLET_API_TOKEN")
-API_URL = os.getenv("WALLET_BASE_URL")
 GMAIL_USERNAME = os.getenv("GMAIL_USERNAME")
 GMAIL_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 

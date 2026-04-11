@@ -1,0 +1,29 @@
+name: Monthly Budget Report (uv)
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load secrets from Bitwarden
+        uses: bitwarden/sm-action@v2
+        with:
+          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
+          secrets: |
+            a13c8960-b560-4de8-aa4e-b428012cbc82 > WALLET_API_TOKEN
+            2b647326-c15c-4350-8f3b-b4290170ac6b > GMAIL_USERNAME
+            d7a7df22-3379-497f-9240-b428012c8d86 > GMAIL_APP_PASSWORD
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Run report
+        run: uv run src/main.py

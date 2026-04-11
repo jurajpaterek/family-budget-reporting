@@ -354,34 +354,42 @@ name = "family-budget-reporting"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "polars" },
+    { name = "python-dotenv" },
+    { name = "redmail" },
+    { name = "requests" },
+]
+
+[package.dev-dependencies]
+dev = [
     { name = "anthropic" },
     { name = "ipykernel" },
     { name = "marimo" },
     { name = "pandas" },
     { name = "plotly" },
-    { name = "polars" },
     { name = "pyarrow" },
     { name = "pydantic-ai-slim" },
-    { name = "python-dotenv" },
     { name = "python-lsp-server" },
-    { name = "redmail" },
-    { name = "requests" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "polars", specifier = ">=1.39.3" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "redmail", specifier = ">=0.6.0" },
+    { name = "requests", specifier = ">=2.33.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
     { name = "anthropic", specifier = ">=0.88.0" },
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "marimo", specifier = ">=0.22.0" },
     { name = "pandas", specifier = ">=3.0.2" },
     { name = "plotly", specifier = ">=6.6.0" },
-    { name = "polars", specifier = ">=1.39.3" },
     { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "pydantic-ai-slim", specifier = ">=1.75.0" },
-    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "python-lsp-server", specifier = ">=1.14.0" },
-    { name = "redmail", specifier = ">=0.6.0" },
-    { name = "requests", specifier = ">=2.33.1" },
 ]
 
 [[package]]
