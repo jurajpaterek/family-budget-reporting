@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.22.0"
+__generated_with = "0.23.0"
 app = marimo.App(width="medium")
 
 
@@ -60,6 +60,13 @@ def _(API_TOKEN, API_URL, get):
         return records
 
     return (get_records_in_range,)
+
+
+@app.cell
+def _(get_records_in_range):
+    records_test = get_records_in_range("2026-01-01", "2026-01-31")
+    print(f"Number of records: {len(records_test)}")
+    return
 
 
 @app.cell
@@ -417,7 +424,6 @@ def _(os, total_food_n_drinks):
     <p>{'Wow, you are on fire! Keep it up!' if total_food_n_drinks < 10000 else 'Careful, you are spending a lot on food and drinks! Consider cooking at home more often.'}</p>
     <p>Best regards,<br>Your Marimo Copilot</p>""",   
     )
-
 
     return
 
