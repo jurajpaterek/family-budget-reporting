@@ -24,12 +24,15 @@ class WalletClient:
 
         while True:
             try:
-                response = get(
-                    f"{self.api_url}/records", headers=headers, params=params
-                ).json()
+                raw = get(f"{self.api_url}/records", headers=headers, params=params)
+                raw.raise_for_status()
+                response = raw.json()
             except Exception as e:
                 logger.error(f"Error occurred while fetching records: {e}")
                 raise e
+
+            if "records" not in response:
+                raise ValueError(f"Unexpected response format: 'records' key missing. Got: {response}")
 
             records.extend(response["records"])
 
