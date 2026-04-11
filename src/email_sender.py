@@ -1,4 +1,7 @@
+import logging
 from redmail import gmail
+
+logger = logging.getLogger(__name__)
 
 
 class EmailSender:

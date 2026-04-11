@@ -1,5 +1,8 @@
+import logging
 from requests import get
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class WalletClient:
@@ -25,7 +28,7 @@ class WalletClient:
                     f"{self.api_url}/records", headers=headers, params=params
                 ).json()
             except Exception as e:
-                print(f"Error occurred while fetching records: {e}")
+                logger.error(f"Error occurred while fetching records: {e}")
                 raise e
 
             records.extend(response["records"])
