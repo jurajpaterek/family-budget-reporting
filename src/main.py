@@ -9,27 +9,24 @@ logger = logging.getLogger(__name__)
 
 def main():
     logger.info("Starting family budget reporting...")
-    # initiate client and fetch records for the current month
-    client = WalletClient(
-        api_token=config.API_TOKEN,
-        api_url=config.API_URL)
-    records_current_month = client.get_records_current_month()
-    logger.info(f"\t ... fetched {len(records_current_month)} records for the current month.")
 
-    # create report builder and generate report
-    report_builder = ReportBuilder(
-        records=records_current_month,
-    )
-    total_food_n_drinks = report_builder.current_month_food_spend()
-    logger.info(f"\t ... total food and drinks spend for the current month: {total_food_n_drinks:.2f} CZK")
+    client = WalletClient(api_token=config.API_TOKEN, api_url=config.API_URL)
 
-    # send report via email
+    records = client.get_records_current_month()
+    logger.info(f"\t ... fetched {len(records)} records for the current month.")
+
+    report_builder = ReportBuilder(records=records)
+    logger.info(f"\t ... {report_builder!r}")
+
+    expense_by_category = report_builder.current_month_expenses_by_category()
+    logger.info(f"\t ... total spend: {expense_by_category.get('Total', 0):.2f} CZK across {len(expense_by_category) - 1} categories.")
+
     email_sender = EmailSender(
         gmail_username=config.GMAIL_USERNAME,
         gmail_password=config.GMAIL_PASSWORD,
         gmail_receivers=config.GMAIL_RECEIVERS,
-        monthly_food_n_drinks_threshold=config.MONTHLY_FOOD_N_DRINKS_THRESHOLD,
-        total_food_n_drinks=total_food_n_drinks,
+        monthly_total_budget=config.MONTHLY_TOTAL_BUDGET,
+        expense_by_category=expense_by_category,
     )
     email_sender.send_report_via_email()
     logger.info(f"\t ... report sent to: {', '.join(config.GMAIL_RECEIVERS)}")

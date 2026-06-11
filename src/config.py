@@ -16,7 +16,7 @@ GMAIL_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
 # define constants
 GMAIL_RECEIVERS = ["juraj.paterek@gmail.com"]
-MONTHLY_FOOD_N_DRINKS_THRESHOLD = 10000 #CZK
+MONTHLY_TOTAL_BUDGET = 90000  # CZK
 
 # setup logging
 handler = logging.StreamHandler()
