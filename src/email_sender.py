@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from redmail import gmail
 
 logger = logging.getLogger(__name__)
@@ -10,24 +11,34 @@ class EmailSender:
         gmail_username: str,
         gmail_password: str,
         gmail_receivers: list[str],
-        monthly_food_n_drinks_threshold: float,
-        total_food_n_drinks: float,
+        monthly_total_budget: float,
+        expense_by_category: dict[str, float],
     ):
         self.gmail_username = gmail_username
         self.gmail_password = gmail_password
         self.gmail_receivers = gmail_receivers
-        self.monthly_food_n_drinks_threshold = monthly_food_n_drinks_threshold
-        self.total_food_n_drinks = total_food_n_drinks
+        self.monthly_total_budget = monthly_total_budget
+        self.expense_by_category = expense_by_category
 
     def send_report_via_email(self):
         gmail.username = self.gmail_username
         gmail.password = self.gmail_password
 
+        month = datetime.today().strftime("%B")
+        total = self.expense_by_category["Total"]
+        category_rows = "".join([
+            f"<li><b>{category}</b>: {amount:.2f} CZK</li>"
+            for category, amount in self.expense_by_category.items()
+            if category != "Total"
+        ])
+
         gmail.send(
             receivers=self.gmail_receivers,
-            subject="Food & drinks current month report",
+            subject=f"{month} spendings - ongoing report",
             html=f"""<p>Hi Juraj,</p>
-                <p>Your total spend on food and drinks for the current month is <b>{self.total_food_n_drinks:.2f} CZK</b>.</p>
-                <p>{"Wow, you are on fire! Keep it up!" if self.total_food_n_drinks < self.monthly_food_n_drinks_threshold else "Careful, you are spending a lot on food and drinks! Consider cooking at home more often."}</p>
-                <p>Best regards,<br>Your Marimo Copilot</p>""",
+                <p>Here is your spending report for this month:</p>
+                <ul>{category_rows}</ul>
+                <p><b>Total: {total:.2f} CZK</b></p>
+                <p>{"Wow, you really went all out this month! Maybe consider cutting back on some expenses next month?" if total > self.monthly_total_budget else "Great job keeping your expenses in check this month! Keep it up!"}</p>
+                <p>Have a great day!</p>""",
         )

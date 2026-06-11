@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.0"
+__generated_with = "0.23.9"
 app = marimo.App(width="medium")
 
 
@@ -13,7 +13,7 @@ def _():
 
     import marimo as mo
 
-    return get, load_dotenv, mo, os, pl
+    return get, load_dotenv, os, pl
 
 
 @app.cell
@@ -23,30 +23,35 @@ def _(load_dotenv, os):
     API_TOKEN = os.environ['WALLET_API_TOKEN']
 
     # load API BASE URL
-    API_URL = os.environ['WALLET_BASE_URL']
+    API_URL = "https://rest.budgetbakers.com/wallet/v1/api/"
     return API_TOKEN, API_URL
 
 
 @app.cell
 def _(API_TOKEN, API_URL, get):
-    def get_records_in_range(start_date, end_date):
-
-        headers = {
+    def get_header():
+        return {
             'Authorization': f'Bearer {API_TOKEN}',
         }
 
-        params = {
+    # function to get records in a date range
+    def get_records_in_range(start_date, end_date):
+
+        headers: dict = get_header()
+
+        params: dict[str, str] = {
             'recordDate': f'gte.{start_date},lte.{end_date}',
             'limit': '200',
             'offset': '0',
         }
 
-        records = []
+        records: list[dict] = []
 
         while True:
             try:
                 response = get(f'{API_URL}/records', headers=headers, params=params).json()
             except Exception as e:
+                raise
                 break
 
             records.extend(response['records'])
@@ -56,300 +61,24 @@ def _(API_TOKEN, API_URL, get):
             else:
                 break
 
-        # return records
         return records
 
-    return (get_records_in_range,)
+    def get_accounts():
+        headers: dict = get_header()
 
+        params: dict[str, str] = {
+            'limit': '200',
+            'offset': '0',
+        }
 
-@app.cell
-def _(get_records_in_range):
-    records_test = get_records_in_range("2026-01-01", "2026-01-31")
-    print(f"Number of records: {len(records_test)}")
-    return
+        try:
+            response = get(f'{API_URL}/accounts', headers=headers, params=params).json()
+        except Exception as e:
+            raise
 
+        return response['accounts']
+    
 
-@app.cell
-def _(get_records_in_range):
-    records = get_records_in_range('2025-04-01', '2025-12-31')
-    return (records,)
-
-
-@app.cell
-def _(pl, records):
-    # load records list to polars dataframe
-    df = pl.DataFrame(records)
-
-    df = df.with_columns(
-        pl.col("category").struct.field("name").alias("category_name")
-    ).with_columns(
-        pl.col("category").struct.field("color").alias("category_color")
-    ).with_columns(
-        pl.col("labels")
-        .list.eval(pl.element().struct.field("name"))
-        .alias("labels_names")
-            ).select(
-            pl.col([
-                "recordDate",
-                "amount",
-                "baseAmount",
-                "note",
-                "category",
-                "category_name",
-                "category_color",
-                "labels",
-                "labels_names",
-                "recordType",
-                "recordState",
-                "paymentType",
-                "createdAt",
-                "updatedAt",
-                "payer",
-                "payee",
-                "id",
-                "accountId",
-            ])
-        )
-    return (df,)
-
-
-@app.cell
-def _(df, pl):
-    # check if all expense records have labels
-
-    (
-        df.filter(
-            pl.col("recordType").str.contains("expense")
-            & pl.col("labels").is_null()
-            & ~pl.col("category_name").str.contains("Transfer")
-        ).select(
-            pl.col(
-                [
-                    "note",
-                    "amount",
-                    "category_name",
-                    "labels_names",
-                    "recordDate",
-                    "recordType",
-                    "paymentType",
-                    "payee",
-                ]
-            )
-        )
-    )
-    return
-
-
-@app.cell
-def _(df, pl):
-    unique_categories_trueexpense = set(
-        df
-            .filter(pl.col('labels_names').list.contains("TrueExpense"))
-            .select(pl.col('category_name')).unique().sort('category_name')
-            ['category_name']
-    )
-
-    unique_categories_not_trueexpense = set(
-        df
-            .filter(~pl.col('labels_names').list.contains("TrueExpense"))
-            .select(pl.col('category_name')).unique().sort('category_name')
-            ['category_name']
-    )
-
-    # print sets sizes
-    print(f"Categories with TrueExpense label: {len(unique_categories_trueexpense)}")
-    print(f"Categories without TrueExpense label: {len(unique_categories_not_trueexpense)}")
-
-    # crossection of categories with and without TrueExpense label
-    intersection = unique_categories_trueexpense.intersection(unique_categories_not_trueexpense)
-    print(f"Categories with and without TrueExpense label: {len(intersection)}")
-
-    # categories in without TrueExpense label but not in with TrueExpense label
-    difference = unique_categories_not_trueexpense.difference(unique_categories_trueexpense)
-    print(f"Categories without TrueExpense label but not in with TrueExpense label: {len(difference)}")
-    difference
-    return difference, intersection
-
-
-@app.cell
-def _(df, difference, pl):
-    # expenses with category in the difference set
-    df.filter(
-        # pl.col('recordType').str.contains("expense") &
-        # ~pl.col('labels_names').list.contains("TrueExpense") &
-        pl.col('category_name').is_in(difference)
-    ).select(
-        pl.col(
-            [
-                "note",
-                "amount",
-                "category_name",
-                "labels_names",
-                "recordDate",
-                "recordType",
-                "paymentType",
-                "payee",
-            ]
-        )
-    )
-    return
-
-
-@app.cell
-def _(df, intersection, pl):
-    # filter records without label TrueExpense but with category in the intersection
-    df.filter(
-        ~pl.col('labels_names').list.contains("TrueExpense") &
-        pl.col('category_name').is_in(intersection)
-    ).select(
-        pl.col(
-            [
-                "note",
-                "amount",
-                "category_name",
-                "labels_names",
-                "recordDate",
-                "recordType",
-                "paymentType",
-                "payee",
-            ]
-        )
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    find a filter that will lead to TrueExpense label subse
-    """)
-    return
-
-
-@app.cell
-def _(df, pl):
-    df_ala_trueexpense = (
-        df
-        .filter(
-            pl.col('recordType').str.contains("expense") &
-            ~pl.col('labels_names').list.contains('Refund/Refunded') &
-            ~pl.col('labels_names').list.contains('Datamole')
-        )
-    )
-
-    df_trueexpense = (
-        df
-        .filter(
-            pl.col('labels_names').list.contains('TrueExpense')
-        )
-    )
-    return df_ala_trueexpense, df_trueexpense
-
-
-@app.cell
-def _(df_ala_trueexpense, df_trueexpense, pl):
-    # verify what rows are missing or are extra in df_ala_trueexpense compared to df_trueexpense
-
-    trueexpense_ids = df_trueexpense['id'].to_list()
-    ala_trueexpense_ids = df_ala_trueexpense['id'].to_list()
-
-    missing_in_ala = df_trueexpense.filter(~pl.col('id').is_in(ala_trueexpense_ids))
-
-    extra_in_ala = df_ala_trueexpense.filter(~pl.col('id').is_in(trueexpense_ids))
-
-    print(f"Missing in ala_trueexpense: {missing_in_ala.shape[0]} records")
-    print(f"Extra in ala_trueexpense: {extra_in_ala.shape[0]} records")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    set monthly budgets on:
-    - total spend
-    - groceries
-    - shopping
-    - leisure
-
-    set yearly budgets on:
-    - total spend
-    - shopping
-    - leisure
-    """)
-    return
-
-
-@app.cell
-def _(df, pl):
-    # show me recordType 'expense' and category 'Transfer'
-    df.filter(
-        pl.col('recordType').str.contains("expense") &
-        pl.col('category_name').str.contains("Transfer")
-    ).select(
-        pl.col(
-            [
-                "note",
-                "amount",
-                "category_name",
-                "labels_names",
-                "recordDate",
-                "recordType",
-                "paymentType",
-                "payee",
-            ]
-        )
-    ).sort('note', descending=False)
-    return
-
-
-@app.cell
-def _(df, pl):
-    # pie chart of expenses divided by category_color and in the second level by category_name, excluding Transfer category and grouping small categories into "Other"
-
-    # Group by category_color and category_name, summing amounts
-    category_color_sums = (
-        df
-        .filter(
-            pl.col('recordType').str.contains("expense") &
-            ~pl.col('category_name').str.contains("Transfer")
-        )
-        .group_by(['category_color', 'category_name'])
-        .agg(pl.col('amount').struct.field('value').sum().abs().alias('total_amount'))
-    )
-
-    # Group small categories into "Other"
-    threshold = 0.00  # categories below 1% go into "Other"
-    total = category_color_sums['total_amount'].sum()
-    category_color_sums_refined = category_color_sums.with_columns(
-        pl.when(pl.col('total_amount') / total < threshold)
-        .then(pl.lit('Other'))
-        .otherwise(pl.col('category_name'))
-        .alias('category_name')
-    ).group_by(['category_color', 'category_name']).agg(
-        pl.col('total_amount').sum()
-    ).sort('total_amount', descending=True)
-
-    # Plot
-    import plotly.express as px
-    fig_color = px.sunburst(
-        category_color_sums_refined.to_pandas(),
-        path=['category_color', 'category_name'],
-        values='total_amount',
-        title='Expenses by Category Color and Name',
-    )
-    fig_color.update_traces(
-        textinfo='label+percent parent',
-    )
-    fig_color.update_layout(
-        title_font_size=20,
-        margin=dict(t=80, b=80, l=80, r=80),
-    )
-    fig_color.show()
-    return
-
-
-@app.cell
-def _(get_records_in_range):
     def get_current_month_records():
         from datetime import datetime
         today = datetime.today()
@@ -357,74 +86,164 @@ def _(get_records_in_range):
         end_date = today.strftime('%Y-%m-%d')
         return get_records_in_range(start_date, end_date)
 
-    return (get_current_month_records,)
+    return get_accounts, get_records_in_range
 
 
 @app.cell
-def _(get_current_month_records, pl):
-    food_n_drinks = ["Bar cafe", "Restaurants & fast food", "Groceries"]
+def _(get_accounts):
+    # get accounts and categories
+    accounts: list = get_accounts()
+    # categories: list = get_categories()
 
-    current_month_records = get_current_month_records()
-    df_current_month = pl.DataFrame(current_month_records)
+    # category_group_mapping: dict['str', 'str'] = {item['id']: item['group']['name'] for item in categories}
+    return
 
-    df_current_month = df_current_month.with_columns(
+
+@app.cell
+def _(get_records_in_range):
+    # get records in the date range and convert to DataFrame
+    records: list = get_records_in_range('2025-04-01', '2026-04-01')
+    return (records,)
+
+
+@app.cell
+def _(pl, records: list):
+    df_records = pl.DataFrame(records).with_columns(
+        # parse recordDate, createdAt, updatedAt to datetime currently they are in following format '2026-04-01T00:00:00.000Z'
+        pl.col("recordDate").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.fZ").alias("recordDate"),
+        pl.col("createdAt").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.fZ").alias("createdAt"),
+        pl.col("updatedAt").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.fZ").alias("updatedAt"),
         pl.col("category").struct.field("name").alias("category_name"),
-        pl.col("baseAmount").struct.field("currencyCode").alias("currencyCode"),
-        pl.col("baseAmount").struct.field("value").alias("amount"),
+        pl.col("category").struct.field("id").alias("category_id"),
+        pl.col("category").struct.field("group").struct.field("name").alias("category_group"),
+        pl.col("labels").list.eval(pl.element().struct.field("name")).alias("labels_names"),
+        pl.col("amount").struct.field("currencyCode").alias("currencyCode"),
+        pl.col("amount").struct.field("value").alias("amount"),
+    # ).with_columns(
+        # pl.col("category_id").replace_strict(category_group_mapping, default='-').alias("category_group")
     ).select(
-        pl.col(
-            [
-                "id",
-                "recordDate",
-                "category_name",
-                "amount",
-                "currencyCode",
-                "note",
-                "recordState",
-                "recordType",
-                "paymentType",
-                "payee",
-                "payer",
-                # "accountId",
-                # "baseAmount",
-                # "category",
-                # "createdAt",
-                # "updatedAt",
-            ]
+        pl.col([
+            "recordDate",
+            # "category",
+            "category_name",
+            "category_group",
+            "note",
+            # "labels",
+            "labels_names",
+            # "baseAmount",        
+            "amount",
+            "currencyCode",
+            "category_id",        
+            "recordType",
+            "recordState",
+            "paymentType",
+            "createdAt",
+            "updatedAt",
+            # "source",
+            "counterParty",
+            "id",
+            "accountId",
+        ])
         )
-    )
-
-    # .abs().sum() of amount for category_name in food_n_drinks
-    total_food_n_drinks = (
-        df_current_month
-        .filter(
-            pl.col('recordType').str.contains("expense") &
-            pl.col('category_name').is_in(food_n_drinks)
-        )
-        .select(pl.col('amount').abs().sum().alias('total_amount'))
-    )['total_amount'][0]
-
-    total_food_n_drinks
-    return (total_food_n_drinks,)
+    return (df_records,)
 
 
 @app.cell
-def _(os, total_food_n_drinks):
-    from redmail import gmail
-
-    gmail.username = os.environ['GMAIL_USERNAME']  # your Gmail address
-    gmail.password = os.environ['GMAIL_APP_PASSWORD']  # 16-char app password from Google Account
-
-    gmail.send(
-        receivers=["juraj.paterek@gmail.com"],
-        subject="Food & drinks current month report",
-        # html content of the email, funny message if total_food_n_drinks is above 10000, otherwise a congratulatory message
-        html=f"""<p>Hi Juraj,</p>
-    <p>Your total spend on food and drinks for the current month is <b>{total_food_n_drinks:.2f} EUR</b>.</p>
-    <p>{'Wow, you are on fire! Keep it up!' if total_food_n_drinks < 10000 else 'Careful, you are spending a lot on food and drinks! Consider cooking at home more often.'}</p>
-    <p>Best regards,<br>Your Marimo Copilot</p>""",   
+def _(df_records, pl):
+    df_expense_2601 = (
+        df_records
+            .filter(
+                  (pl.col("category_name") != "Transfer")   # filters out transfers between my own accounts - they are shown as expense/income with specific category "Transfer"
+                & (pl.col("recordType") == "expense")       # limits to expenses only
+                & (pl.col("recordDate") >= pl.date(2026, 1, 1))
+                & (pl.col("recordDate") < pl.date(2026, 2, 1))
+                )       
     )
 
+    # df_expense_2601
+    return (df_expense_2601,)
+
+
+@app.cell
+def _(df_expense_2601, pl):
+    # dict of metrics to calculate for the report
+
+    expense_by_category: dict[str, float] = {row[0]: row[1] for row in (
+        df_expense_2601
+        .group_by("category_group")
+        .agg(pl.col("amount").sum().abs().alias("total_amount"))
+        .sort("total_amount", descending=True)
+        ).iter_rows()}
+
+    # add total expenses to the dict
+    expense_by_category["Total"] = df_expense_2601.select(pl.col("amount").sum().abs()).item()
+
+    expense_by_category
+    return
+
+
+@app.cell
+def _(df_records, pl):
+    # dict of last 6-month average monthly expenses by category group calculated as arithmetic mean of expenses per month for the specific category group in the last 6 months (from 2025-07-01 to 2025-12-31)
+
+    df_expense_6m = (
+        df_records
+            .filter(
+                  (pl.col("category_name") != "Transfer")   # filters out transfers between my own accounts - they are shown as expense/income with specific category "Transfer"
+                & (pl.col("recordType") == "expense")       # limits to expenses only
+                & (pl.col("recordDate") >= pl.date(2025, 7, 1))
+                & (pl.col("recordDate") < pl.date(2026, 1, 1))
+                )       
+    )
+
+    expense_6m_by_month_category = (
+        df_expense_6m
+        .with_columns(pl.col("recordDate").dt.month().alias("month"))
+        .group_by(["month", "category_group"])
+        .agg(pl.col("amount").sum().abs().alias("total_amount"))
+        .sort(["category_group", "month"])
+    )
+
+    expense_6m_mean_by_category = (
+        expense_6m_by_month_category
+        .group_by("category_group")
+        .agg(pl.col("total_amount").median().alias("avg_monthly_expense"))
+        .sort("avg_monthly_expense", descending=True)
+    )
+
+    expense_6m_mean_by_category_dict: dict[str, float] = {row[0]: row[1] for row in expense_6m_mean_by_category.iter_rows()}
+    expense_6m_mean_by_category_dict
+    return
+
+
+@app.cell
+def _():
+    # from redmail import gmail
+
+    # gmail.username = os.environ['GMAIL_USERNAME']  # your Gmail address
+    # gmail.password = os.environ['GMAIL_APP_PASSWORD']  # 16-char app password from Google Account
+
+    # gmail.send(
+    #     receivers=["juraj.paterek@gmail.com"],
+    #     subject="This month's spendings",
+    #     # prepare sarcastic report on my current month spending based on the expense_by_category dict with '\t category ... amount CZK' format for each category and a final line with total expenses same format but bold, and add a sarcastic comment on total spend if the amount is above 75000 CZK. Start with a greeting and end with a positive note if the total spend is below 75000 CZK.
+
+    #     html=f"""
+    #     <p>Hi Juraj,</p>
+    #     <p>Here is your spending report for this month:</p>
+    #     <ul>
+    #     {''.join([f"<li><b>{category}</b>: {amount:.2f} CZK</li>" for category, amount in expense_by_category.items() if category != "Total"])}
+    #     </ul>
+    #     <p><b>Total: {expense_by_category['Total']:.2f} CZK</b></p>
+    #     <p>{'Wow, you really went all out this month! Maybe consider cutting back on some expenses next month?' if expense_by_category['Total'] > 75000 else 'Great job keeping your expenses in check this month! Keep it up!'}</p>
+    #     <p>Have a great day!</p>    
+    #     """,   
+    # )
+    return
+
+
+@app.cell
+def _():
     return
 
 

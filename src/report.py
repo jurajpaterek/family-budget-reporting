@@ -5,49 +5,46 @@ logger = logging.getLogger(__name__)
 
 
 class ReportBuilder:
-    def __init__(
-        self,
-        records: list[dict],
-    ):
-        self.records = records
-        self.df_records = self.create_dataframe()
+    def __init__(self, records: list[dict]):
+        self._records = records
+        self._df = self._create_dataframe()
 
-    def create_dataframe(self):
+    def _create_dataframe(self) -> pl.DataFrame:
         return (
-            pl.DataFrame(data=self.records)
+            pl.DataFrame(data=self._records)
             .with_columns(
                 pl.col("category").struct.field("name").alias("category_name"),
-                pl.col("baseAmount").struct.field("currencyCode").alias("currencyCode"),
-                pl.col("baseAmount").struct.field("value").alias("amount"),
+                pl.col("category").struct.field("group").struct.field("name").alias("category_group"),
+                pl.col("amount").struct.field("value").alias("amount"),
+                pl.col("amount").struct.field("currencyCode").alias("currencyCode"),
             )
             .select(
-                pl.col(
-                    [
-                        "id",
-                        "recordDate",
-                        "category_name",
-                        "amount",
-                        "currencyCode",
-                        "recordType",
-                        # "note",
-                        # "recordState",
-                        # "paymentType",
-                        # "payee",
-                        # "payer",
-                        # "accountId",
-                        # "baseAmount",
-                        # "category",
-                        # "createdAt",
-                        # "updatedAt",
-                    ]
-                )
+                pl.col([
+                    "id",
+                    "recordDate",
+                    "category_name",
+                    "category_group",
+                    "amount",
+                    "currencyCode",
+                    "recordType",
+                ])
             )
         )
-    
-    def current_month_food_spend(self) -> float:
-        food_n_drinks = ["Bar cafe", "Restaurants & fast food", "Groceries"]
 
-        return self.df_records.filter(
-            pl.col("recordType").str.contains("expense")
-            & pl.col("category_name").is_in(food_n_drinks)
-        ).select(pl.col("amount").abs().sum().alias("total_amount"))["total_amount"][0]
+    def current_month_expenses_by_category(self) -> dict[str, float]:
+        result = (
+            self._df
+            .filter(
+                (pl.col("recordType") == "expense")
+                & (pl.col("category_name") != "Transfer")
+            )
+            .group_by("category_group")
+            .agg(pl.col("amount").sum().abs().alias("total_amount"))
+            .sort("total_amount", descending=True)
+        )
+        breakdown = {row[0]: row[1] for row in result.iter_rows()}
+        breakdown["Total"] = sum(breakdown.values())
+        return breakdown
+
+    def __repr__(self) -> str:
+        return f"ReportBuilder(records={len(self._records)})"

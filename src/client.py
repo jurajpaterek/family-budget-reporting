@@ -49,3 +49,4 @@ class WalletClient:
         end_date = today.strftime("%Y-%m-%d")
 
         return self.get_records_in_range(start_date, end_date)
+

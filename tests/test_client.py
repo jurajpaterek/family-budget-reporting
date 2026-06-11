@@ -54,3 +54,5 @@ def test_raises_on_network_error(client):
     with patch("client.get", side_effect=ConnectionError("connection refused")):
         with pytest.raises(ConnectionError):
             client.get_records_in_range("2026-04-01", "2026-04-12")
+
+
