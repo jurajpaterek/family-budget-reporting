@@ -25,6 +25,9 @@ def main():
     paid_count = sum(1 for item in obligatory_status if item["paid"])
     logger.info(f"\t ... obligatory expenses: {paid_count}/{len(obligatory_status)} paid.")
 
+    last_7_days = report_builder.last_7_days_records()
+    logger.info(f"\t ... last 7 days: {len(last_7_days)} records.")
+
     email_sender = EmailSender(
         gmail_username=config.GMAIL_USERNAME,
         gmail_password=config.GMAIL_PASSWORD,
@@ -32,6 +35,7 @@ def main():
         monthly_total_budget=config.MONTHLY_TOTAL_BUDGET,
         expense_by_category=expense_by_category,
         obligatory_status=obligatory_status,
+        last_7_days=last_7_days,
     )
     email_sender.send_report_via_email()
     logger.info(f"\t ... report sent to: {', '.join(config.GMAIL_RECEIVERS)}")
