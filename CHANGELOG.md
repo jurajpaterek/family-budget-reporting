@@ -12,6 +12,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - `current_month_expenses_by_category()` excludes obligatory from category groups; Total includes them
 - Cron time updated to 18:00 UTC
+- Email subject changed to `Ongoing expense report - {Month}`
 
 ## [0.2.0] — 2026-06-11
 ### Added
