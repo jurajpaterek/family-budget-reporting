@@ -44,9 +44,10 @@ class EmailSender:
 
         gmail.send(
             receivers=self.gmail_receivers,
-            subject=f"{month} spendings - ongoing report",
+            subject=f"Ongoing expense report - {month}",
             html=f"""<p>Hi Juraj,</p>
-                <p>Here is your spending report for this month:</p>
+                <p>Here is your expense breakdown for the month of {month}:</p>
+                <p><b>Expenses by category</b> (obligatory expenses excluded):</p>
                 <ul>{category_rows}</ul>
                 <p><b>Regular obligatory expenses:</b></p>
                 <ul>{obligatory_rows}</ul>
