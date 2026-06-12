@@ -3,7 +3,7 @@
 All notable changes to this project will be documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — v0.2.1
+## [0.2.1]
 ### Added
 - Obligatory expense tracking: rent and scholarship separated from discretionary breakdown
 - Each obligatory item shows ✅ with amount if paid this month, ❌ if not detected
