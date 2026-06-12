@@ -5,9 +5,29 @@ logger = logging.getLogger(__name__)
 
 
 class ReportBuilder:
-    def __init__(self, records: list[dict]):
+    def __init__(self, records: list[dict], obligatory_expenses: list[dict]):
         self._records = records
+        self._obligatory_expenses = obligatory_expenses
         self._df = self._create_dataframe()
+
+    def _build_obligatory_expression(self) -> pl.Expr:
+        if not self._obligatory_expenses:
+            return pl.lit(False)
+
+        expressions = []
+        for item in self._obligatory_expenses:
+            expr = (
+                pl.col("counterParty").str.contains(item["counterparty"])
+                & pl.col("category_name").str.contains(item["category"])
+            )
+            if item["amount_min"] is not None and item["amount_max"] is not None:
+                expr = expr & pl.col("amount").is_between(item["amount_min"], item["amount_max"])
+            expressions.append(expr)
+
+        result = expressions[0]
+        for expr in expressions[1:]:
+            result = result | expr
+        return result
 
     def _create_dataframe(self) -> pl.DataFrame:
         return (
@@ -18,6 +38,9 @@ class ReportBuilder:
                 pl.col("amount").struct.field("value").alias("amount"),
                 pl.col("amount").struct.field("currencyCode").alias("currencyCode"),
             )
+            .with_columns(
+                self._build_obligatory_expression().alias("obligatory_regular")
+            )
             .select(
                 pl.col([
                     "id",
@@ -27,24 +50,45 @@ class ReportBuilder:
                     "amount",
                     "currencyCode",
                     "recordType",
+                    "counterParty",
+                    "obligatory_regular",
                 ])
             )
         )
 
     def current_month_expenses_by_category(self) -> dict[str, float]:
+        all_expenses = self._df.filter(
+            (pl.col("recordType") == "expense")
+            & (pl.col("category_name") != "Transfer")
+        )
         result = (
-            self._df
-            .filter(
-                (pl.col("recordType") == "expense")
-                & (pl.col("category_name") != "Transfer")
-            )
+            all_expenses
+            .filter(pl.col("obligatory_regular") == False)
             .group_by("category_group")
             .agg(pl.col("amount").sum().abs().alias("total_amount"))
             .sort("total_amount", descending=True)
         )
         breakdown = {row[0]: row[1] for row in result.iter_rows()}
-        breakdown["Total"] = sum(breakdown.values())
+        breakdown["Total"] = all_expenses.select(pl.col("amount").sum().abs()).item()
         return breakdown
+
+    def current_month_obligatory_status(self) -> list[dict]:
+        status = []
+        for item in self._obligatory_expenses:
+            expr = (
+                pl.col("counterParty").str.contains(item["counterparty"])
+                & pl.col("category_name").str.contains(item["category"])
+                & (pl.col("recordType") == "expense")
+            )
+            if item["amount_min"] is not None and item["amount_max"] is not None:
+                expr = expr & pl.col("amount").is_between(item["amount_min"], item["amount_max"])
+
+            matches = self._df.filter(expr)
+            if len(matches) > 0:
+                status.append({"label": item["label"], "amount": abs(matches["amount"].sum()), "paid": True})
+            else:
+                status.append({"label": item["label"], "amount": None, "paid": False})
+        return status
 
     def __repr__(self) -> str:
         return f"ReportBuilder(records={len(self._records)})"

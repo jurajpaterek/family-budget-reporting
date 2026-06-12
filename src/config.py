@@ -18,6 +18,23 @@ GMAIL_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 GMAIL_RECEIVERS = ["juraj.paterek@gmail.com"]
 MONTHLY_TOTAL_BUDGET = 90000  # CZK
 
+OBLIGATORY_EXPENSES = [
+    {
+        "label": "Rent",
+        "counterparty": "2869677033/0800",
+        "category": "Rent",
+        "amount_min": None,
+        "amount_max": None,
+    },
+    {
+        "label": "Scholarship",
+        "counterparty": "1035870393/5500",
+        "category": "Education & development",
+        "amount_min": -15000,
+        "amount_max": -5000,
+    },
+]
+
 # setup logging
 handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
