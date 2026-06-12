@@ -77,7 +77,7 @@ def _(API_TOKEN, API_URL, get):
             raise
 
         return response['accounts']
-    
+
 
     def get_current_month_records():
         from datetime import datetime
@@ -107,20 +107,37 @@ def _(get_records_in_range):
 
 
 @app.cell
-def _(pl, records: list):
+def _(pl):
+    is_obligatory_regular = (   # scholarship Devinek
+            pl.col('counterParty').str.contains('1035870393/5500')
+          & pl.col('amount').is_between(-15000, -5000)
+          & pl.col('category_name').str.contains('Education & development')
+        ) | (
+            pl.col('counterParty').str.contains('2869677033/0800')
+          & pl.col('category_name').str.contains('Rent')
+        )
+    return (is_obligatory_regular,)
+
+
+@app.cell
+def _(is_obligatory_regular, pl, records: list):
     df_records = pl.DataFrame(records).with_columns(
         # parse recordDate, createdAt, updatedAt to datetime currently they are in following format '2026-04-01T00:00:00.000Z'
         pl.col("recordDate").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.fZ").alias("recordDate"),
         pl.col("createdAt").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.fZ").alias("createdAt"),
         pl.col("updatedAt").str.strptime(pl.Datetime, format="%Y-%m-%dT%H:%M:%S%.fZ").alias("updatedAt"),
+        # break down category struct into separate columns
         pl.col("category").struct.field("name").alias("category_name"),
         pl.col("category").struct.field("id").alias("category_id"),
         pl.col("category").struct.field("group").struct.field("name").alias("category_group"),
+        # break down labels list of structs into separate column with list of label names
         pl.col("labels").list.eval(pl.element().struct.field("name")).alias("labels_names"),
+        # break down amount struct into separate columns
         pl.col("amount").struct.field("currencyCode").alias("currencyCode"),
         pl.col("amount").struct.field("value").alias("amount"),
-    # ).with_columns(
-        # pl.col("category_id").replace_strict(category_group_mapping, default='-').alias("category_group")
+    ).with_columns(
+        # add is_obligatory_regular column
+        is_obligatory_regular.alias("obligatory_regular")
     ).select(
         pl.col([
             "recordDate",
@@ -146,6 +163,12 @@ def _(pl, records: list):
         ])
         )
     return (df_records,)
+
+
+@app.cell
+def _(df_records):
+    df_records
+    return
 
 
 @app.cell

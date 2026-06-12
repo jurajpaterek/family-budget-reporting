@@ -3,12 +3,30 @@
 All notable changes to this project will be documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — v0.0.2
-### Planned
-- Category breakdown table in email
-- Month-over-month spend comparison
+## [Unreleased] — v0.2.1
+### Added
+- Obligatory expense tracking: rent and scholarship separated from discretionary breakdown
+- Each obligatory item shows ✅ with amount if paid this month, ❌ if not detected
+- `OBLIGATORY_EXPENSES` config constant with counterparty + category matching criteria
 
-## [0.0.1] — 2026-04-12
+### Changed
+- `current_month_expenses_by_category()` excludes obligatory from category groups; Total includes them
+- Cron time updated to 18:00 UTC
+
+## [0.2.0] — 2026-06-11
+### Added
+- Category breakdown by group in email (Food & Drinks, Shopping, Housing, etc.), sorted by spend descending
+- `README.md`, `CHANGELOG.md`, `.env.example`
+- `__repr__` on `ReportBuilder`
+- Encapsulation: internal DataFrame `_df` is private
+
+### Changed
+- Category groups now read directly from `category.group.name` in each record — separate `/categories` API call removed
+- Cron schedule changed from daily to Tuesdays and Saturdays at 07:00 UTC
+- Monthly budget threshold raised to 90,000 CZK (was 10,000)
+- Email subject is now dynamic: `{Month} spendings - ongoing report`
+
+## [0.1.0] — 2026-04-13
 ### Added
 - Monthly report pipeline: fetch records from BudgetBakers API → calculate food & drinks spend → send email
 - `WalletClient` — Bearer auth, `/records` endpoint, response validation

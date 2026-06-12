@@ -8,7 +8,7 @@ Automated pipeline that fetches expense records from the BudgetBakers Wallet API
 BudgetBakers API → WalletClient → ReportBuilder → EmailSender → Gmail
 ```
 
-Runs daily at 07:00 UTC via GitHub Actions. Secrets are pulled from Bitwarden Secrets Manager at runtime — no credentials stored in the repo.
+Runs every Tuesday and Saturday at 18:00 UTC via GitHub Actions. Secrets are pulled from Bitwarden Secrets Manager at runtime — no credentials stored in the repo.
 
 ## Prerequisites
 

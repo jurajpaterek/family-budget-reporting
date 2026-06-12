@@ -10,7 +10,7 @@ Teaching approach: ask questions and let the developer reason to answers. Never 
 ---
 
 ## Current State
-- Version: `0.0.1` tagged and live; v0.0.2 in progress on branch `setup-metrics`
+- Version: `0.1.0` tagged and live; v0.2.x in progress on branch `setup-metrics`
 - Pipeline runs daily, sends email with food & drinks spend for current month
 - uv workflow confirmed working; Docker workflow removed
 - Branch protection on main: PRs required, `test` status check must pass
@@ -33,7 +33,7 @@ Teaching approach: ask questions and let the developer reason to answers. Never 
 family-budget-reporting/
 ├── .github/
 │   └── workflows/
-│       ├── report-uv.yml        # daily cron 07:00 UTC, uv direct
+│       ├── report-uv.yml        # Tue/Sat cron 18:00 UTC, uv direct
 │       └── tests.yml            # runs on every PR and push to non-main
 ├── notebooks/
 │   ├── __marimo__/              # Marimo session state (auto-generated)
@@ -121,28 +121,31 @@ family-budget-reporting/
 
 ## Versioned Roadmap
 
-### v0.0.2 — Richer report (CURRENT)
+### v0.2.x — Richer report (CURRENT)
 - Category breakdown table in email
 - Month-over-month spend comparison
 - Prototype in Marimo first, then productise
 - Teaches: Polars `group_by`/`join`/`sort`, `__str__`/`__repr__`
+- Refund policy - need to clean data in wallet,
+- Obligatory expenses separately
+- list of last week expenses
 
-### v0.0.3 — Charts
+### v0.3.x — Charts
 - Plotly trend chart as PNG in email via kaleido
 - Marimo for interactive prototyping before productising
 - Teaches: dataclasses (`ReportData`), Marimo reactive workflow
 
-### v0.0.4 — Robustness
+### v0.4.x — Robustness
 - Retry logic with `tenacity` (exponential backoff)
 - Idempotency — prevent duplicate emails
 - `mypy` in CI
 - Teaches: decorators
 
-### v0.5 — Multiple report types
+### v0.5.x — Multiple report types
 - Weekly summary alongside monthly
 - Teaches: inheritance, abstract base classes, GitHub Actions matrix builds
 
-### v1.0 — Observability
+### v1.0.0 — Observability
 - Structured JSON logging
 - Failure notifications
 - Auto-versioning on merge to main
