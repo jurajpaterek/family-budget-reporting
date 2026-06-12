@@ -1,6 +1,6 @@
 import logging
 from requests import get
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,10 @@ class WalletClient:
 
     def get_records_current_month(self):
         today = datetime.today()
-        start_date = today.replace(day=1).strftime("%Y-%m-%d")
+        first_of_month = today.replace(day=1)
+        seven_days_ago = today - timedelta(days=6)
+        start = min(first_of_month, seven_days_ago)
+        start_date = start.strftime("%Y-%m-%d")
         end_date = today.strftime("%Y-%m-%d")
 
         return self.get_records_in_range(start_date, end_date)

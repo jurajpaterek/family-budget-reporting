@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from report import ReportBuilder
 
 
@@ -65,6 +66,22 @@ def test_amounts_are_absolute(make_record, obligatory_expenses):
     assert result["Food & Drinks"] == 750.0
 
 
+def test_current_month_filter_excludes_previous_month(make_record, obligatory_expenses):
+    today = date.today()
+    if today.month == 1:
+        prev_month_date = f"{today.year - 1}-12-01T00:00:00.000Z"
+    else:
+        prev_month_date = f"{today.year}-{today.month - 1:02d}-01T00:00:00.000Z"
+
+    records = [
+        make_record(category_group="Food & Drinks", amount=-500.0),
+        make_record(category_group="Food & Drinks", amount=-300.0, record_date=prev_month_date),
+    ]
+    result = ReportBuilder(records, obligatory_expenses).current_month_expenses_by_category()
+    assert result["Food & Drinks"] == 500.0
+    assert result["Total"] == 500.0
+
+
 def test_obligatory_paid(make_record, obligatory_expenses):
     records = [
         make_record(category_name="Rent", category_group="Housing", amount=-14000.0, counter_party="test-counterparty"),
@@ -99,6 +116,21 @@ def test_obligatory_amount_range_not_matched(make_record):
     assert status[0]["paid"] is False
 
 
+def test_last_7_days_returns_recent_records(make_record, obligatory_expenses):
+    recent_date = f"{(date.today() - timedelta(days=3)).isoformat()}T00:00:00.000Z"
+    records = [make_record(record_date=recent_date, amount=-200.0)]
+    result = ReportBuilder(records, obligatory_expenses).last_7_days_records()
+    assert len(result) == 1
+    assert result[0]["amount"] == -200.0
+
+
+def test_last_7_days_excludes_older_records(make_record, obligatory_expenses):
+    old_date = f"{(date.today() - timedelta(days=8)).isoformat()}T00:00:00.000Z"
+    records = [make_record(record_date=old_date, amount=-200.0)]
+    result = ReportBuilder(records, obligatory_expenses).last_7_days_records()
+    assert len(result) == 0
+
+
 def test_unpacks_category_name(make_record, obligatory_expenses):
     rb = ReportBuilder([make_record(category_name="Groceries")], obligatory_expenses)
     assert rb._df["category_name"][0] == "Groceries"
@@ -121,7 +153,11 @@ def test_unpacks_currency_code(make_record, obligatory_expenses):
 
 def test_output_columns(make_record, obligatory_expenses):
     rb = ReportBuilder([make_record()], obligatory_expenses)
-    assert rb._df.columns == ["id", "recordDate", "category_name", "category_group", "amount", "currencyCode", "recordType", "counterParty", "obligatory_regular"]
+    assert rb._df.columns == [
+        "id", "recordDate", "category_name", "category_group",
+        "amount", "currencyCode", "recordType", "counterParty",
+        "obligatory_regular", "note", "accountName", "labels_names",
+    ]
 
 
 def test_repr(make_record, obligatory_expenses):

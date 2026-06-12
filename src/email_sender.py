@@ -14,6 +14,7 @@ class EmailSender:
         monthly_total_budget: float,
         expense_by_category: dict[str, float],
         obligatory_status: list[dict],
+        last_7_days: list[dict],
     ):
         self.gmail_username = gmail_username
         self.gmail_password = gmail_password
@@ -21,6 +22,37 @@ class EmailSender:
         self.monthly_total_budget = monthly_total_budget
         self.expense_by_category = expense_by_category
         self.obligatory_status = obligatory_status
+        self.last_7_days = last_7_days
+
+    def _build_records_table(self) -> str:
+        if not self.last_7_days:
+            return "<p><i>No records in the last 7 days.</i></p>"
+
+        rows = ""
+        for r in self.last_7_days:
+            color = "red" if r["record_type"] == "expense" else ("green" if r["record_type"] == "income" else "black")
+            rows += (
+                f"<tr>"
+                f"<td>{r['date']}</td>"
+                f"<td>{r['category_name']}</td>"
+                f"<td>{r['category_group']}</td>"
+                f"<td>{r['account_name']}</td>"
+                f"<td>{r['labels_names']}</td>"
+                f"<td>{r['note']}</td>"
+                f"<td style='color:{color}'>{r['amount']:.2f} CZK</td>"
+                f"</tr>"
+            )
+
+        return (
+            "<table border='1' cellpadding='4' cellspacing='0' style='border-collapse:collapse;font-size:13px'>"
+            "<tr style='background:#f0f0f0'>"
+            "<th>Date</th><th>Category</th><th>Group</th><th>Account</th><th>Labels</th><th>Note</th><th>Amount</th>"
+            "</tr>"
+            + rows
+            + "</table>"
+            "<p style='font-size:13px'>More details available "
+            "<a href='https://web.budgetbakers.com/records'>online</a>.</p>"
+        )
 
     def send_report_via_email(self):
         gmail.username = self.gmail_username
@@ -53,5 +85,7 @@ class EmailSender:
                 <ul>{obligatory_rows}</ul>
                 <p><b>Total: {total:.2f} CZK</b></p>
                 <p>{"Wow, you really went all out this month! Maybe consider cutting back on some expenses next month?" if total > self.monthly_total_budget else "Great job keeping your expenses in check this month! Keep it up!"}</p>
+                <p><b>Recent transactions:</b></p>
+                {self._build_records_table()}
                 <p>Have a great day!</p>""",
         )

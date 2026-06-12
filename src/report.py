@@ -1,4 +1,5 @@
 import logging
+from datetime import date, timedelta
 import polars as pl
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,10 @@ class ReportBuilder:
                 pl.col("category").struct.field("group").struct.field("name").alias("category_group"),
                 pl.col("amount").struct.field("value").alias("amount"),
                 pl.col("amount").struct.field("currencyCode").alias("currencyCode"),
+                pl.col("labels").map_elements(
+                    lambda labels: ", ".join(item["name"] for item in labels) if isinstance(labels, list) and labels else "",
+                    return_dtype=pl.Utf8,
+                ).alias("labels_names"),
             )
             .with_columns(
                 self._build_obligatory_expression().alias("obligatory_regular")
@@ -52,14 +57,19 @@ class ReportBuilder:
                     "recordType",
                     "counterParty",
                     "obligatory_regular",
+                    "note",
+                    "accountName",
+                    "labels_names",
                 ])
             )
         )
 
     def current_month_expenses_by_category(self) -> dict[str, float]:
+        current_month = date.today().strftime("%Y-%m")
         all_expenses = self._df.filter(
             (pl.col("recordType") == "expense")
             & (pl.col("category_name") != "Transfer")
+            & (pl.col("recordDate").str.slice(0, 7) == current_month)
         )
         result = (
             all_expenses
@@ -89,6 +99,28 @@ class ReportBuilder:
             else:
                 status.append({"label": item["label"], "amount": None, "paid": False})
         return status
+
+    def last_7_days_records(self) -> list[dict]:
+        cutoff = (date.today() - timedelta(days=6)).isoformat()
+        result = (
+            self._df
+            .filter(pl.col("recordDate").str.slice(0, 10) >= cutoff)
+            .sort("recordDate", descending=True)
+            .select(["recordDate", "category_name", "category_group", "accountName", "labels_names", "note", "amount", "recordType"])
+        )
+        return [
+            {
+                "date": row["recordDate"][:10],
+                "category_name": row["category_name"],
+                "category_group": row["category_group"],
+                "account_name": row["accountName"],
+                "labels_names": row["labels_names"],
+                "note": row["note"],
+                "amount": row["amount"],
+                "record_type": row["recordType"],
+            }
+            for row in result.to_dicts()
+        ]
 
     def __repr__(self) -> str:
         return f"ReportBuilder(records={len(self._records)})"
