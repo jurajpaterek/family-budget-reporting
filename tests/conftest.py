@@ -17,6 +17,7 @@ def make_record():
         note="",
         account_name="Test Account",
         record_date=None,
+        labels=None,
     ):
         return {
             "id": "test-id",
@@ -31,7 +32,7 @@ def make_record():
             "counterParty": counter_party,
             "note": note,
             "accountName": account_name,
-            "labels": [],
+            "labels": [{"name": l} for l in (labels or [])],
         }
     return _make_record
 

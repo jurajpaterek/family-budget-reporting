@@ -8,9 +8,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Last 7-day records table in email (all record types, color-coded amounts: red/green/black)
 - Fetch window extended to always cover 7 days back even across month boundaries
 - `last_7_days_records()` method on `ReportBuilder`
+- Records labelled Refund/Refunded excluded from monthly expense breakdown
 
 ### Changed
 - `current_month_expenses_by_category()` now filters by current month to prevent previous-month records from inflating totals
+- `labels_names` stored as `List[Utf8]` instead of pre-joined string
+
+### Fixed
+- 7-day cutoff was using `days=8` instead of `days=6`
 
 ## [0.2.1]
 ### Added

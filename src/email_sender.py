@@ -37,7 +37,7 @@ class EmailSender:
                 f"<td>{r['category_name']}</td>"
                 f"<td>{r['category_group']}</td>"
                 f"<td>{r['account_name']}</td>"
-                f"<td>{r['labels_names']}</td>"
+                f"<td>{', '.join(r['labels_names'])}</td>"
                 f"<td>{r['note']}</td>"
                 f"<td style='color:{color}'>{r['amount']:.2f} CZK</td>"
                 f"</tr>"

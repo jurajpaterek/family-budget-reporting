@@ -39,8 +39,8 @@ class ReportBuilder:
                 pl.col("amount").struct.field("value").alias("amount"),
                 pl.col("amount").struct.field("currencyCode").alias("currencyCode"),
                 pl.col("labels").map_elements(
-                    lambda labels: ", ".join(item["name"] for item in labels) if isinstance(labels, list) and labels else "",
-                    return_dtype=pl.Utf8,
+                    lambda labels: [] if labels is None or labels.is_empty() else [item["name"] for item in labels.to_list()],
+                    return_dtype=pl.List(pl.Utf8),
                 ).alias("labels_names"),
             )
             .with_columns(
@@ -70,6 +70,8 @@ class ReportBuilder:
             (pl.col("recordType") == "expense")
             & (pl.col("category_name") != "Transfer")
             & (pl.col("recordDate").str.slice(0, 7) == current_month)
+            & ~pl.col("labels_names").list.contains("Refund")
+            & ~pl.col("labels_names").list.contains("Refunded")
         )
         result = (
             all_expenses
