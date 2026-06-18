@@ -3,20 +3,27 @@
 All notable changes to this project will be documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — v0.2.2
+## [Unreleased] — v0.2.3
+### Added
+- Records labelled Refund/Refunded excluded from monthly expense breakdown; remain visible in 7-day table
+
+### Changed
+- `labels_names` stored as `List[Utf8]` instead of pre-joined string
+
+### Fixed
+- Labels parsing: `map_elements` always receives a Polars Series, not a Python list — use `.is_empty()`/`.to_list()` instead of `isinstance` check; previously all non-empty labels silently became `[]`
+- 7-day cutoff was using `days=8` instead of `days=6`
+- Cron restored to Tuesdays and Saturdays at 18:00 UTC (was temporarily set to daily for debugging)
+
+## [0.2.2] — 2026-06-12
 ### Added
 - Last 7-day records table in email (all record types, color-coded amounts: red/green/black)
 - Fetch window extended to always cover 7 days back even across month boundaries
 - `last_7_days_records()` method on `ReportBuilder`
-- Records labelled Refund/Refunded excluded from monthly expense breakdown
+- Link to web records below the 7-day table
 
 ### Changed
 - `current_month_expenses_by_category()` now filters by current month to prevent previous-month records from inflating totals
-- `labels_names` stored as `List[Utf8]` instead of pre-joined string
-
-### Fixed
-- 7-day cutoff was using `days=8` instead of `days=6`
-- Cron restored to Tuesdays and Saturdays at 18:00 UTC (was temporarily set to daily for debugging)
 
 ## [0.2.1]
 ### Added
