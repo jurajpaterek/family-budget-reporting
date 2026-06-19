@@ -12,7 +12,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Labels parsing: `map_elements` always receives a Polars Series, not a Python list — use `.is_empty()`/`.to_list()` instead of `isinstance` check; previously all non-empty labels silently became `[]`
-- 7-day cutoff was using `days=8` instead of `days=6`
 - Cron restored to Tuesdays and Saturdays at 18:00 UTC (was temporarily set to daily for debugging)
 - Refund filter corrected: actual BudgetBakers label is `"Refund/Refunded"` (single label with slash), not two separate labels
 
