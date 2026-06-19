@@ -39,8 +39,8 @@ class ReportBuilder:
                 pl.col("amount").struct.field("value").alias("amount"),
                 pl.col("amount").struct.field("currencyCode").alias("currencyCode"),
                 pl.col("labels").map_elements(
-                    lambda labels: ", ".join(item["name"] for item in labels) if isinstance(labels, list) and labels else "",
-                    return_dtype=pl.Utf8,
+                    lambda labels: [] if labels is None or labels.is_empty() else [item["name"] for item in labels.to_list()],
+                    return_dtype=pl.List(pl.Utf8),
                 ).alias("labels_names"),
             )
             .with_columns(
@@ -67,9 +67,10 @@ class ReportBuilder:
     def current_month_expenses_by_category(self) -> dict[str, float]:
         current_month = date.today().strftime("%Y-%m")
         all_expenses = self._df.filter(
-            (pl.col("recordType") == "expense")
+              (pl.col("recordType") == "expense")
             & (pl.col("category_name") != "Transfer")
             & (pl.col("recordDate").str.slice(0, 7) == current_month)
+            & ~pl.col("labels_names").list.contains("Refund/Refunded")
         )
         result = (
             all_expenses

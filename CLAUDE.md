@@ -10,8 +10,8 @@ Teaching approach: ask questions and let the developer reason to answers. Never 
 ---
 
 ## Current State
-- Version: `0.1.0` tagged and live; v0.2.x in progress on branch `setup-metrics`
-- Pipeline runs daily, sends email with food & drinks spend for current month
+- Version: `0.2.2` tagged; `0.2.3` in progress on branch `labels-fix-refund-exclusion`
+- Pipeline runs every Tuesday and Saturday at 18:00 UTC, sends categorised expense report with obligatory expense tracking and last 7-day record table
 - uv workflow confirmed working; Docker workflow removed
 - Branch protection on main: PRs required, `test` status check must pass
 
@@ -158,13 +158,29 @@ family-budget-reporting/
 2. Prototype in `notebooks/prototyping.py` using Marimo
 3. Productise into `src/` once logic is confirmed
 4. Write tests before or alongside code — never after
-5. Push → `Tests` workflow runs automatically
-6. Open PR → tests must pass, then merge
+5. Update CHANGELOG and README (see rules below)
+6. Push → `Tests` workflow runs automatically
+7. Open PR → tests must pass, then merge
 
 ## IMPORTANT: Always run tests before suggesting a merge
 ```bash
 uv run pytest tests/
 ```
+
+---
+
+## CHANGELOG & README Rules
+
+**Every change to `src/` must include:**
+- A CHANGELOG entry describing what changed
+- A README update if the change affects user-visible behaviour (schedule, email format, new config, etc.)
+
+**Versioning:**
+- CHANGELOG entries always go under the `[Unreleased]` section
+- The unreleased version is always `latest git tag + patch increment (0.0.1)`
+- Find the latest tag: `git tag --sort=-version:refname | head -1`
+- Example: latest tag `0.2.2` → unreleased section is `[Unreleased] — v0.2.3`
+- When a PR is merged and tagged, rename `[Unreleased]` to `[X.Y.Z] — YYYY-MM-DD` and open a new `[Unreleased] — vX.Y.Z+1` above it
 
 ---
 

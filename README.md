@@ -42,7 +42,7 @@ uv run pytest tests/     # run the test suite
 
 ## Automated delivery
 
-The GitHub Actions workflow (`report-uv.yml`) runs daily and can also be triggered manually via `workflow_dispatch`. Secrets are injected at runtime from Bitwarden — no secrets are stored in GitHub.
+The GitHub Actions workflow (`report-uv.yml`) runs every Tuesday and Saturday at 18:00 UTC and can also be triggered manually via `workflow_dispatch`. Secrets are injected at runtime from Bitwarden — no secrets are stored in GitHub.
 
 ## Tech stack
 

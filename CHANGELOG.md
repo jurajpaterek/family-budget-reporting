@@ -3,11 +3,24 @@
 All notable changes to this project will be documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — v0.2.2
+## [0.2.3] — 2026-06-19
+### Added
+- Records labelled Refund/Refunded excluded from monthly expense breakdown; remain visible in 7-day table
+
+### Changed
+- `labels_names` stored as `List[Utf8]` instead of pre-joined string
+
+### Fixed
+- Labels parsing: `map_elements` always receives a Polars Series, not a Python list — use `.is_empty()`/`.to_list()` instead of `isinstance` check; previously all non-empty labels silently became `[]`
+- Cron restored to Tuesdays and Saturdays at 18:00 UTC (was temporarily set to daily for debugging)
+- Refund filter corrected: actual BudgetBakers label is `"Refund/Refunded"` (single label with slash), not two separate labels
+
+## [0.2.2] — 2026-06-12
 ### Added
 - Last 7-day records table in email (all record types, color-coded amounts: red/green/black)
 - Fetch window extended to always cover 7 days back even across month boundaries
 - `last_7_days_records()` method on `ReportBuilder`
+- Link to web records below the 7-day table
 
 ### Changed
 - `current_month_expenses_by_category()` now filters by current month to prevent previous-month records from inflating totals
