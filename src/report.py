@@ -67,11 +67,10 @@ class ReportBuilder:
     def current_month_expenses_by_category(self) -> dict[str, float]:
         current_month = date.today().strftime("%Y-%m")
         all_expenses = self._df.filter(
-            (pl.col("recordType") == "expense")
+              (pl.col("recordType") == "expense")
             & (pl.col("category_name") != "Transfer")
             & (pl.col("recordDate").str.slice(0, 7) == current_month)
-            & ~pl.col("labels_names").list.contains("Refund")
-            & ~pl.col("labels_names").list.contains("Refunded")
+            & ~pl.col("labels_names").list.contains("Refund/Refunded")
         )
         result = (
             all_expenses

@@ -134,7 +134,7 @@ def test_last_7_days_excludes_older_records(make_record, obligatory_expenses):
 def test_refund_excluded_from_breakdown(make_record, obligatory_expenses):
     records = [
         make_record(category_group="Food & Drinks", amount=-500.0),
-        make_record(category_group="Food & Drinks", amount=-200.0, labels=["Refunded"]),
+        make_record(category_group="Food & Drinks", amount=-200.0, labels=["Refund/Refunded"]),
     ]
     result = ReportBuilder(records, obligatory_expenses).current_month_expenses_by_category()
     assert result["Food & Drinks"] == 500.0
@@ -142,7 +142,7 @@ def test_refund_excluded_from_breakdown(make_record, obligatory_expenses):
 
 
 def test_refund_still_appears_in_last_7_days(make_record, obligatory_expenses):
-    records = [make_record(category_group="Food & Drinks", amount=-200.0, labels=["Refunded"])]
+    records = [make_record(category_group="Food & Drinks", amount=-200.0, labels=["Refund/Refunded"])]
     result = ReportBuilder(records, obligatory_expenses).last_7_days_records()
     assert len(result) == 1
 
