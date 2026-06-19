@@ -3,7 +3,7 @@
 All notable changes to this project will be documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — v0.2.3
+## [0.2.3] — 2026-06-19
 ### Added
 - Records labelled Refund/Refunded excluded from monthly expense breakdown; remain visible in 7-day table
 
